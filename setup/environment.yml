@@ -1,0 +1,51 @@
+name: aiml-internship
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - pip
+  - jupyter
+  - jupyterlab
+  - numpy
+  - pandas
+  - matplotlib
+  - seaborn
+  - scikit-learn
+  - plotly
+  - pip:
+    # Core MLOps and LLMOps
+    - metaflow>=2.7.0
+    - langchain>=0.1.0
+    - langgraph>=0.0.40
+    - langchain-community
+    - langchain-openai
+    - langchain-anthropic
+    
+    # Development Tools
+    - jupyter-contrib-nbextensions
+    - ipywidgets
+    - black
+    - flake8
+    - pytest
+    
+    # Additional ML Libraries
+    - xgboost
+    - lightgbm
+    - optuna
+    - mlflow
+    
+    # Data Processing
+    - beautifulsoup4
+    - requests
+    - aiohttp
+    - tqdm
+    
+    # Visualization
+    - streamlit
+    - gradio
+    
+    # Optional: Deep Learning (uncomment if needed)
+    # - torch
+    # - torchvision
+    # - tensorflow
