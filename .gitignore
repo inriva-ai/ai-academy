@@ -192,6 +192,8 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# .DS_Store
 weeks/week1/.DS_Store
 weeks/.DS_Store
 .DS_Store
