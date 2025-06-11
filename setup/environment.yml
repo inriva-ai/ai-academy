@@ -1,4 +1,4 @@
-name: aiml-internship
+name: aiml-academy
 channels:
   - conda-forge
   - defaults
