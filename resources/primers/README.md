@@ -3,11 +3,12 @@
 Comprehensive introductions to key program technologies.
 
 ## Available Primers
-- `metaflow-complete.md` - Full MLOps with Metaflow
-- `langchain-ecosystem.md` - LangChain and LCEL deep dive
-- `langgraph-agents.md` - Multi-agent systems
-- `python-ml-refresher.md` - Python for ML review
-- `mlops-principles.md` - MLOps best practices
+- `python-primer.md` - Python fundamentals
+- `sklearn-primer.md` - Scikit-learn for ML review
+- `metaflow-intro.md` - MLOps with Metaflow
+- `metaflow-dev-stack.md` - Metaflow development stack
+- `langchain-primer.md` - LangChain and LCEL
+- `dataset-resources.md` - Multi-agent systems
 
 ## When to Use
 - Before starting a new technology week
