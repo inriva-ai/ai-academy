@@ -56,9 +56,9 @@ Interactive Jupyter notebooks for the workshop:
 
 ### 🌊 Metaflow Flows (`/flows/`)
 Complete Metaflow workflow examples:
+- **hello_world_flow.py** - A simple flow to demonstrate Metaflow basics
 - **workshop_intro_flow.py** - Basic Metaflow concepts
 - **wine_classification_flow.py** - Complete ML pipeline
-- **advanced_example_flow.py** - Advanced techniques
 
 ### 📊 Data (`/data/`)
 Sample datasets for practice:

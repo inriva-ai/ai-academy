@@ -67,8 +67,8 @@ class WineClassificationFlow(FlowSpec):
         wine_data = load_wine()
         
         # Store as artifacts
-        self.feature_names = wine_data.feature_names.tolist()
-        self.target_names = wine_data.target_names.tolist()
+        self.feature_names = wine_data.feature_names
+        self.target_names = wine_data.target_names
         self.X = wine_data.data
         self.y = wine_data.target
         
