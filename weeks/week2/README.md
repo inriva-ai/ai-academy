@@ -63,7 +63,7 @@ print("🎯 Environment ready for Week 2!")
 
 ## 📁 Week Structure
 
-### 🔥 Workshop Session (`/workshop/`)
+### 🔥 Workshop Session
 - **Step 1**: Advanced Metaflow preprocessing patterns
 - **Step 2**: LangChain and LCEL fundamentals  
 - **Step 3**: Local LLM setup with Ollama
@@ -78,9 +78,16 @@ print("🎯 Environment ready for Week 2!")
 ### 🌊 Flows (`/flows/`)
 - **preprocessing_flow.py** - Complete data preprocessing pipeline
 - **text_analysis_flow.py** - Text processing with LLM integration
+
+  This flow will require some additional libraries:
+  - [x] Install spacy: `pip install spacy` or `conda install spacy`
+  - [x] Install nltk: `pip install nltk` or `conda install nltk`
+  - [x] Install textstat: `pip install textstat`
+  
 - **hybrid_pipeline.py** - Combined ML + LLM workflow
 
 ### 📊 Data (`/data/`)
+- **data_files.py** - Scrip to generate sample datasets for Week 2 exercises
 - **titanic.csv** - Primary dataset for preprocessing exercises
 - **customer_reviews.csv** - Text data for LangChain integration
 - **financial_data.json** - Complex structured data for advanced processing

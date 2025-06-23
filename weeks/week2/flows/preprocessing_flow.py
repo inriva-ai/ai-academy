@@ -712,17 +712,17 @@ class AdvancedPreprocessingFlow(FlowSpec):
             }
         }
         
-        self.preprocessing_report = report
+        # self.preprocessing_report = report
         
         # Print summary
-        print("\n📊 PREPROCESSING SUMMARY")
-        print("=" * 30)
-        print(f"Original shape: {report['data_overview']['original_shape']}")
-        print(f"Final shape: {report['data_overview']['final_shape']}")
-        print(f"Features created: {report['data_overview']['features_created']}")
-        print(f"Train/test split: {report['final_datasets']['train_size']}/{report['final_datasets']['test_size']}")
-        print(f"Data quality score: {report['data_exploration']['quality_score']:.1f}/100")
-        
+        # print("\n📊 PREPROCESSING SUMMARY")
+        # print("=" * 30)
+        # print(f"Original shape: {report['data_overview']['original_shape']}")
+        # print(f"Final shape: {report['data_overview']['final_shape']}")
+        # print(f"Features created: {report['data_overview']['features_created']}")
+        # print(f"Train/test split: {report['final_datasets']['train_size']}/{report['final_datasets']['test_size']}")
+        # print(f"Data quality score: {report['data_exploration']['quality_score']:.1f}/100")
+
         self.next(self.end)
     
     @step

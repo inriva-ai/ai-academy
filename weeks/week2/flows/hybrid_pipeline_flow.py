@@ -287,12 +287,9 @@ class HybridMLLMFlow(FlowSpec):
         print(f"   Features added: {len(preprocessing_log.get('features_created', []))}")
         print(f"   Data completeness: {self.data_statistics['data_quality']['completeness_score']:.1f}%")
         
-        # Route to appropriate analysis
-        if self.use_llm_analysis and LANGCHAIN_AVAILABLE:
-            self.next(self.llm_analysis)
-        else:
-            self.next(self.traditional_analysis)
-    
+       
+        self.next(self.llm_analysis, self.traditional_analysis)
+
     def _calculate_survival_statistics(self, df):
         """Calculate detailed survival statistics"""
         if 'Survived' not in df.columns:
@@ -339,6 +336,10 @@ class HybridMLLMFlow(FlowSpec):
         """
         LLM-powered data analysis with structured output
         """
+        if not (self.use_llm_analysis and LANGCHAIN_AVAILABLE):
+            self.next(self.generate_insights)
+            return
+        
         print("🧠 Running LLM analysis...")
         
         try:
@@ -346,42 +347,42 @@ class HybridMLLMFlow(FlowSpec):
             analysis_prompt = PromptTemplate.from_template(
                 """You are an expert data scientist analyzing passenger data from the Titanic disaster.
 
-DATA OVERVIEW:
-- Total passengers: {total_passengers}
-- Overall survival rate: {survival_rate:.1%}
-- Average age: {average_age:.1f} years
-- Average fare: ${average_fare:.2f}
+                    DATA OVERVIEW:
+                    - Total passengers: {total_passengers}
+                    - Overall survival rate: {survival_rate:.1%}
+                    - Average age: {average_age:.1f} years
+                    - Average fare: ${average_fare:.2f}
 
-DISTRIBUTIONS:
-- Class distribution: {class_distribution}
-- Gender distribution: {gender_distribution}
-- Embarkation ports: {embarkation_distribution}
+                    DISTRIBUTIONS:
+                    - Class distribution: {class_distribution}
+                    - Gender distribution: {gender_distribution}
+                    - Embarkation ports: {embarkation_distribution}
 
-SURVIVAL PATTERNS:
-- By gender: {survival_by_gender}
-- By class: {survival_by_class}
-- By age group: {survival_by_age_group}
+                    SURVIVAL PATTERNS:
+                    - By gender: {survival_by_gender}
+                    - By class: {survival_by_class}
+                    - By age group: {survival_by_age_group}
 
-DATA QUALITY:
-- Data completeness: {completeness_score:.1f}%
-- Missing data handled: {missing_data_handled}
-- Outliers detected: {outliers_summary}
+                    DATA QUALITY:
+                    - Data completeness: {completeness_score:.1f}%
+                    - Missing data handled: {missing_data_handled}
+                    - Outliers detected: {outliers_summary}
 
-Please provide a comprehensive analysis including:
+                    Please provide a comprehensive analysis including:
 
-KEY FINDINGS:
-- What are the 3 most important survival patterns?
-- Which factors show the strongest correlation with survival?
+                    KEY FINDINGS:
+                    - What are the 3 most important survival patterns?
+                    - Which factors show the strongest correlation with survival?
 
-RECOMMENDATIONS:
-- What insights would be most valuable for understanding this disaster?
-- What additional data would strengthen the analysis?
+                    RECOMMENDATIONS:
+                    - What insights would be most valuable for understanding this disaster?
+                    - What additional data would strengthen the analysis?
 
-CONCERNS:
-- Are there any data quality issues that could affect conclusions?
-- What potential biases should be considered?
+                    CONCERNS:
+                    - Are there any data quality issues that could affect conclusions?
+                    - What potential biases should be considered?
 
-Please structure your response clearly with the above sections."""
+                    Please structure your response clearly with the above sections."""
             )
             
             # Prepare input data
@@ -475,6 +476,10 @@ Please structure your response clearly with the above sections."""
         """
         Traditional statistical analysis as fallback
         """
+        if self.use_llm_analysis and LANGCHAIN_AVAILABLE:
+            self.next(self.generate_insights)
+            return
+        
         print("📊 Running traditional statistical analysis...")
         
         stats = self.data_statistics
@@ -561,15 +566,21 @@ Please structure your response clearly with the above sections."""
         self.next(self.generate_insights)
     
     @step
-    def generate_insights(self):
+    def generate_insights(self, inputs):
         """
         Generate combined insights and actionable recommendations
         """
         print("💡 Generating comprehensive insights...")
         
         # Combine preprocessing insights with analysis results
-        insights = self.analysis_result['insights']
-        
+        for input in inputs:
+            if hasattr(input, 'analysis_result'):
+                self.analysis_result = input.analysis_result
+                self.data_statistics = input.data_statistics
+                self.preprocessing_log = input.preprocessing_log
+                self.df = input.df
+                self.df_processed = input.df_processed
+            
         # Add preprocessing-specific insights
         preprocessing_insights = []
         
@@ -596,7 +607,7 @@ Please structure your response clearly with the above sections."""
         # Combine all insights
         self.comprehensive_insights = {
             'analysis_type': self.analysis_result['type'],
-            'primary_insights': insights,
+            'primary_insights':self.analysis_result['insights'],
             'preprocessing_insights': preprocessing_insights,
             'actionable_recommendations': actionable_recommendations,
             'data_statistics': self.data_statistics,
@@ -604,7 +615,7 @@ Please structure your response clearly with the above sections."""
         }
         
         print(f"✅ Insights generated: {self.analysis_result['type']}")
-        print(f"   Primary insights: {len(insights.get('key_findings', []))}")
+        print(f"   Primary insights: {len(self.analysis_result['insights'].get('key_findings', []))}")
         print(f"   Actionable recommendations: {len(actionable_recommendations)}")
         
         self.next(self.create_final_report)

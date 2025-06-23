@@ -501,8 +501,14 @@ class TextAnalysisFlow(FlowSpec):
             'errors': []
         }
         
+        self.flow_start_time = None
+
         for inp in inputs:
             try:
+                if self.flow_start_time is None:
+                    self.flow_start_time = inp.flow_start_time
+                else:
+                    self.flow_start_time = min(self.flow_start_time, inp.flow_start_time)    
                 # Get the original text data
                 text_data = inp.input
                 
@@ -652,7 +658,7 @@ class TextAnalysisFlow(FlowSpec):
                         'max_texts': self.max_texts
                     }
                 },
-                'input_summary': self.input_summary,
+                # 'input_summary': self.input_summary,
                 'processing_summary': self.processing_summary,
                 'aggregate_insights': self.aggregate_insights,
                 'detailed_results': [asdict(result) for result in self.all_results]
