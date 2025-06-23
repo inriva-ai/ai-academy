@@ -201,3 +201,6 @@ resources/.DS_Store
 .Rproj.user
 ai-academy.Rproj
 .metaflow/
+**/data/
+**/output/
+
