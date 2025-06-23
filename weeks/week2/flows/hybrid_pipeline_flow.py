@@ -573,25 +573,18 @@ class HybridMLLMFlow(FlowSpec):
         print("💡 Generating comprehensive insights...")
         
         # Combine preprocessing insights with analysis results
-        for input in inputs:
-            if hasattr(input, 'analysis_result'):
-                self.analysis_result = input.analysis_result
-                self.data_statistics = input.data_statistics
-                self.preprocessing_log = input.preprocessing_log
-                self.df = input.df
-                self.df_processed = input.df_processed
-            
+        self.merge_artifacts(inputs, include=['analysis_result', 'data_statistics', 'preprocessing_log', 'df', 'df_processed'])
+        
         # Add preprocessing-specific insights
         preprocessing_insights = []
         
-        if hasattr(self, 'preprocessing_log'):
-            missing_handled = self.preprocessing_log['missing_values']['handled']
-            if missing_handled > 0:
-                preprocessing_insights.append(f"Successfully processed {missing_handled} missing values")
-            
-            features_created = len(self.preprocessing_log.get('features_created', []))
-            if features_created > 0:
-                preprocessing_insights.append(f"Created {features_created} additional features for analysis")
+        missing_handled = self.preprocessing_log['missing_values']['handled']
+        if missing_handled > 0:
+            preprocessing_insights.append(f"Successfully processed {missing_handled} missing values")
+        
+        features_created = len(self.preprocessing_log.get('features_created', []))
+        if features_created > 0:
+            preprocessing_insights.append(f"Created {features_created} additional features for analysis")
         
         # Create actionable recommendations
         actionable_recommendations = []

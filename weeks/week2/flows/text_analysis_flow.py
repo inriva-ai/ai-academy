@@ -13,6 +13,7 @@ Usage:
 """
 
 from metaflow import FlowSpec, step, Parameter, current, catch, retry
+import os
 import json
 import logging
 from typing import Dict, List, Optional, Any
@@ -45,6 +46,11 @@ try:
     nltk.download('stopwords', quiet=True)
 except:
     pass
+
+# Create output directory for .json and .csv files if it doesn't exist
+OUTPUT_DIR = "../output"
+if not os.path.exists(OUTPUT_DIR):
+    os.makedirs(OUTPUT_DIR)
 
 class TextType(Enum):
     """Types of text content"""
@@ -501,15 +507,10 @@ class TextAnalysisFlow(FlowSpec):
             'errors': []
         }
         
-        self.flow_start_time = None
+        self.merge_artifacts(inputs, include=['flow_start_time'])
 
         for inp in inputs:
             try:
-                if self.flow_start_time is None:
-                    self.flow_start_time = inp.flow_start_time
-                else:
-                    self.flow_start_time = min(self.flow_start_time, inp.flow_start_time)    
-                # Get the original text data
                 text_data = inp.input
                 
                 # Combine NLP and LLM results
@@ -666,7 +667,7 @@ class TextAnalysisFlow(FlowSpec):
             
             # Export as JSON
             if self.output_format in ['json', 'both']:
-                json_path = f"text_analysis_results_{timestamp}.json"
+                json_path = f"{OUTPUT_DIR}/text_analysis_results_{timestamp}.json"
                 with open(json_path, 'w', encoding='utf-8') as f:
                     json.dump(export_data, f, indent=2, ensure_ascii=False)
                 self.export_paths.append(json_path)
@@ -693,7 +694,7 @@ class TextAnalysisFlow(FlowSpec):
                     }
                     csv_data.append(row)
                 
-                csv_path = f"text_analysis_summary_{timestamp}.csv"
+                csv_path = f"{OUTPUT_DIR}/text_analysis_summary_{timestamp}.csv"
                 df = pd.DataFrame(csv_data)
                 df.to_csv(csv_path, index=False)
                 self.export_paths.append(csv_path)
