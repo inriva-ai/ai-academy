@@ -200,4 +200,7 @@ weeks/.DS_Store
 resources/.DS_Store
 .Rproj.user
 ai-academy.Rproj
-/aiml-academy
+.metaflow/
+**/data/
+**/output/
+
