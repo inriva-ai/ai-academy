@@ -9,7 +9,7 @@ Usage:
     python model_comparison_flow.py run --tuning_method grid --n_jobs 4
 """
 
-from metaflow import FlowSpec, step, Parameter, foreach, resources, catch
+from metaflow import FlowSpec, step, Parameter, resources, catch
 import pandas as pd
 import numpy as np
 from sklearn.datasets import load_wine, load_breast_cancer
@@ -326,6 +326,8 @@ class ModelComparisonFlow(FlowSpec):
         """
         print("📊 Comparing all tuned models...")
         
+        self.merge_artifacts(inputs, exclude=['tuned_model', 'model_results', 'current_model_name'])
+                             
         # Collect results from all parallel branches
         self.all_model_results = {}
         self.failed_models = []

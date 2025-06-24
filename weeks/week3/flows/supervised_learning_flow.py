@@ -12,7 +12,7 @@ Usage:
     python supervised_learning_flow.py run --dataset_type housing --test_size 0.3
 """
 
-from metaflow import FlowSpec, step, Parameter, foreach, resources, catch
+from metaflow import FlowSpec, step, Parameter, resources, catch
 import pandas as pd
 import numpy as np
 from sklearn.datasets import load_wine, make_regression
@@ -266,6 +266,8 @@ class SupervisedLearningFlow(FlowSpec):
         Collect and evaluate all trained models.
         """
         print("📊 Evaluating all models...")
+        
+        self.merge_artifacts(inputs, exclude=['algorithms', 'model_results', 'current_algorithm'])
         
         # Collect results from all parallel branches
         self.all_results = {}

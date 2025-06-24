@@ -76,8 +76,8 @@ class HybridEvaluationFlow(FlowSpec):
         wine_data = load_wine()
         self.X = pd.DataFrame(wine_data.data, columns=wine_data.feature_names)
         self.y = wine_data.target
-        self.target_names = wine_data.target_names.tolist()
-        self.feature_names = wine_data.feature_names.tolist()
+        self.target_names = wine_data.target_names
+        self.feature_names = wine_data.feature_names
         
         print(f"📊 Dataset: Wine Classification")
         print(f"   Samples: {self.X.shape[0]}")
@@ -501,7 +501,7 @@ class HybridEvaluationFlow(FlowSpec):
             'overall_comparison': self.overall_comparison,
             'key_insights': [
                 f"Best performing model: {self.best_model_name}",
-                f"Performance level: {self.hybrid_report['executive_summary']['performance_level'] if 'executive_summary' in self.hybrid_report else 'Unknown'}",
+                # f"Performance level: {self.hybrid_report['executive_summary']['performance_level'] if 'executive_summary' in self.hybrid_report else 'Unknown'}",
                 f"Models meeting threshold: {sum(r['meets_threshold'] for r in self.model_results.values())}/{len(self.model_results)}"
             ]
         }
