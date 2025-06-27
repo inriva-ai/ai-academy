@@ -42,7 +42,8 @@ By the end of this week, you'll be able to:
 
 ### 📓 Notebooks (`/notebooks/`)
 - **week3_workshop.ipynb** - Interactive workshop with all algorithms
-- **classification_deep_dive.ipynb** - Comprehensive classification tutorial
+- **classification_deep_dive.ipynb** - Comprehensive classification tutorial. This notebook will require some additional libraries:
+    - [x] Install imbalanced-learn: `pip install imbalanced-learn` before running the notebook
 - **regression_fundamentals.ipynb** - Complete regression analysis
 - **model_comparison_lab.ipynb** - Side-by-side algorithm comparison
 
