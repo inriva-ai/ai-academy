@@ -34,12 +34,13 @@ from datetime import datetime
 # Check LangGraph availability
 try:
     from langgraph.graph import StateGraph, END
-    from langgraph.prebuilt import ToolExecutor, ToolInvocation
-    from langgraph.checkpoint import MemorySaver
+    # from langgraph.prebuilt import ToolExecutor, ToolInvocation
+    # from langgraph.checkpoint import MemorySaver
     print("✅ LangGraph imported successfully!")
     LANGGRAPH_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     print("⚠️ LangGraph not installed. Install with: pip install langgraph")
+    print(f"Error: {e}")
     print("   We'll demonstrate concepts with mock implementations.")
     LANGGRAPH_AVAILABLE = False
 
@@ -129,12 +130,12 @@ def load_data_node(state: Dict) -> Dict:
         )
         feature_names = [f"feature_{i}" for i in range(20)]
     
-    # Update state
-    state['data'] = (X, y)
-    state['feature_names'] = feature_names
-    state['messages'].append(f"Loaded dataset: {state['dataset_name']}")
-    
-    return state
+    # Return only updated keys
+    return {
+        'data': (X, y),
+        'feature_names': feature_names,
+        'messages': [f"Loaded dataset: {state['dataset_name']}"]
+    }
 
 # Node 2: Data Analyzer
 def analyze_data_node(state: Dict) -> Dict:
@@ -145,22 +146,25 @@ def analyze_data_node(state: Dict) -> Dict:
     
     X, y = state['data']
     
-    # Perform analysis
-    state['n_samples'] = X.shape[0]
-    state['n_features'] = X.shape[1]
+    # Perform data analysis
+    n_samples = X.shape[0]
+    n_features = X.shape[1]
     
     # Class distribution
     unique, counts = np.unique(y, return_counts=True)
-    state['class_distribution'] = dict(zip(unique.tolist(), counts.tolist()))
+    class_distribution = dict(zip(unique.tolist(), counts.tolist()))
     
     # Add analysis message
-    state['messages'].append(
-        f"Analysis complete: {state['n_samples']} samples, "
-        f"{state['n_features']} features, "
-        f"{len(state['class_distribution'])} classes"
-    )
-    
-    return state
+    return {
+        'n_samples': n_samples,
+        'n_features': n_features,
+        'class_distribution': class_distribution,
+        'messages': [
+            f"Analysis complete: {n_samples} samples, "
+            f"{n_features} features, "
+            f"{len(class_distribution)} classes"
+        ]
+    }
 
 # Node 3: Report Generator
 def generate_report_node(state: Dict) -> Dict:
@@ -183,12 +187,12 @@ def generate_report_node(state: Dict) -> Dict:
     {', '.join(state['feature_names'][:5])}...
     """
     
-    state['messages'].append("Report generated successfully")
-    state['analysis_complete'] = True
-    
     print(report)
     
-    return state
+    return {
+        'messages': ["Report generated successfully"],
+        'analysis_complete': True
+    }
 
 print("✅ Agent nodes defined!")
 
@@ -222,12 +226,10 @@ if LANGGRAPH_AVAILABLE:
     
     # Visualize if possible
     try:
-        # This would display the graph visually in Jupyter
-        # from IPython.display import Image, display
-        # display(Image(app.get_graph().draw_png()))
-        pass
-    except:
-        print("(Graph visualization not available)")
+        from IPython.display import Image, display
+        display(Image(app.get_graph().draw_png()))
+    except Exception as e:
+        print(f"📊 Graph visualization not available: {e}")
     
     # Run the agent
     print("\n🚀 Running the agent...")
@@ -330,12 +332,12 @@ def train_simple_model_node(state: Dict) -> Dict:
     
     accuracy = model.score(X_test, y_test)
     
-    state['model'] = model
-    state['accuracy'] = accuracy
-    state['model_type'] = 'simple'
-    state['messages'].append(f"Simple model trained: {accuracy:.3f} accuracy")
-    
-    return state
+    return {
+        'model': model,
+        'accuracy': accuracy,
+        'model_type': 'simple',
+        'messages': [f"Simple model trained: {accuracy:.3f} accuracy"]
+    }
 
 def train_complex_model_node(state: Dict) -> Dict:
     """Train a complex model for large datasets."""
@@ -349,22 +351,22 @@ def train_complex_model_node(state: Dict) -> Dict:
     
     accuracy = model.score(X_test, y_test)
     
-    state['model'] = model
-    state['accuracy'] = accuracy
-    state['model_type'] = 'complex'
-    state['messages'].append(f"Complex model trained: {accuracy:.3f} accuracy")
-    
-    return state
+    return {
+        'model': model,
+        'accuracy': accuracy,
+        'model_type': 'complex',
+        'messages': [f"Complex model trained: {accuracy:.3f} accuracy"]
+    }
 
 def balance_data_node(state: Dict) -> Dict:
     """Balance the dataset using SMOTE or similar."""
     print("⚖️ [Data Balancer] Balancing classes...")
     
     # Simulate balancing (in real implementation, use SMOTE or similar)
-    state['messages'].append("Data balanced using oversampling")
-    state['needs_balancing'] = False
-    
-    return state
+    return {
+        'messages': ["Data balanced using oversampling"],
+        'needs_balancing': False
+    }
 
 # Build conditional workflow
 if LANGGRAPH_AVAILABLE:
@@ -474,6 +476,7 @@ class MLAssistant:
         self.workflow.add_node("train_model", self._train_model)
         self.workflow.add_node("evaluate_model", self._evaluate_model)
         self.workflow.add_node("generate_recommendations", self._generate_recommendations)
+        self.workflow.add_node("create_report", self._create_report) 
         
         # Define flow
         self.workflow.set_entry_point("understand_task")
@@ -484,21 +487,20 @@ class MLAssistant:
         self.workflow.add_edge("optimize_hyperparameters", "train_model")
         self.workflow.add_edge("train_model", "evaluate_model")
         self.workflow.add_edge("evaluate_model", "generate_recommendations")
-        self.workflow.add_edge("generate_recommendations", END)
+        self.workflow.add_edge("generate_recommendations", "create_report")
+        self.workflow.add_edge("create_report", END)
         
         # Compile
         self.app = self.workflow.compile()
         
     def _understand_task(self, state):
         """Understand the ML task from description."""
-        state['messages'].append(f"Understanding task: {state['task_description']}")
-        return state
+        return {'messages': [f"Understanding task: {state['task_description']}"]}
     
     def _analyze_data(self, state):
         """Analyze dataset characteristics."""
         X, y = state['data']
-        
-        state['data_characteristics'] = {
+        data_characteristics = {
             'n_samples': X.shape[0],
             'n_features': X.shape[1],
             'n_classes': len(np.unique(y)),
@@ -506,9 +508,10 @@ class MLAssistant:
             'missing_values': False,
             'imbalance_ratio': self._calculate_imbalance(y)
         }
-        
-        state['messages'].append("Data analysis complete")
-        return state
+        return {
+            'data_characteristics': data_characteristics,
+            'messages': ["Data analysis complete"]
+        }
     
     def _calculate_imbalance(self, y):
         """Calculate class imbalance ratio."""
@@ -527,10 +530,10 @@ class MLAssistant:
             steps.append('balancing')
         
         steps.extend(['scaling', 'feature_selection'])
-        
-        state['preprocessing_steps'] = steps
-        state['messages'].append(f"Selected preprocessing: {', '.join(steps)}")
-        return state
+        return {
+            'preprocessing_steps': steps,
+            'messages': [f"Selected preprocessing: {', '.join(steps)}"]
+        }
     
     def _recommend_models(self, state):
         """Recommend models based on task and data."""
@@ -551,30 +554,27 @@ class MLAssistant:
         
         # Always include a baseline
         candidates.append('naive_bayes')
-        
-        state['candidate_models'] = list(set(candidates))
-        state['messages'].append(f"Recommended models: {', '.join(candidates)}")
-        return state
+       
+        return {
+            'candidate_models': candidates,
+            'messages': [f"Recommended models: {', '.join(candidates)}"]
+        }
     
     def _optimize_hyperparameters(self, state):
         """Optimize hyperparameters for selected model."""
         # Simplified - just set some defaults
-        state['selected_model'] = state['candidate_models'][0]
-        
+        selected_model = state['candidate_models'][0]
         hyperparams = {
             'random_forest': {'n_estimators': 100, 'max_depth': 10},
             'logistic_regression': {'C': 1.0, 'max_iter': 1000},
             'svm': {'C': 1.0, 'kernel': 'rbf'},
             'gradient_boosting': {'n_estimators': 100, 'learning_rate': 0.1}
         }
-        
-        state['hyperparameters'] = hyperparams.get(
-            state['selected_model'], 
-            {}
-        )
-        
-        state['messages'].append(f"Optimized hyperparameters for {state['selected_model']}")
-        return state
+        return {
+            'selected_model': selected_model,
+            'hyperparameters': hyperparams.get(selected_model, {}),
+            'messages': [f"Optimized hyperparameters for {selected_model}"]
+        }
     
     def _train_model(self, state):
         """Train the selected model."""
@@ -597,16 +597,16 @@ class MLAssistant:
         # Calculate scores
         train_score = model.score(X_train, y_train)
         test_score = model.score(X_test, y_test)
-        
-        state['trained_model'] = model
-        state['validation_scores'] = {
+        validation_scores = {
             'train_accuracy': train_score,
             'test_accuracy': test_score,
             'overfit_score': train_score - test_score
         }
-        
-        state['messages'].append(f"Model trained: {test_score:.3f} test accuracy")
-        return state
+        return {
+            'trained_model': model,
+            'validation_scores': validation_scores,
+            'messages': [f"Model trained: {test_score:.3f} test accuracy"]
+        }
     
     def _evaluate_model(self, state):
         """Evaluate model performance."""
@@ -615,9 +615,9 @@ class MLAssistant:
         # Simple evaluation logic
         performance = "good" if scores['test_accuracy'] > 0.8 else "needs improvement"
         overfit = "yes" if scores['overfit_score'] > 0.1 else "no"
-        
-        state['messages'].append(f"Performance: {performance}, Overfitting: {overfit}")
-        return state
+        return {
+            'messages': [f"Performance: {performance}, Overfitting: {overfit}"]
+        }
     
     def _generate_recommendations(self, state):
         """Generate final recommendations."""
@@ -631,11 +631,10 @@ class MLAssistant:
         if state['validation_scores']['overfit_score'] > 0.1:
             recommendations.append("Add regularization to reduce overfitting")
             recommendations.append("Collect more training data")
-        
-        state['recommendations'] = recommendations
-        state['final_report'] = self._create_report(state)
-        
-        return state
+        return {
+            'recommendations': recommendations,
+            'messages': ["Final recommendations generated"]
+        }
     
     def _create_report(self, state):
         """Create a comprehensive report."""
@@ -658,8 +657,10 @@ class MLAssistant:
         Recommendations:
         {chr(10).join(f"- {rec}" for rec in state['recommendations'])}
         """
-        
-        return report
+        return {
+            'final_report': report,
+            'messages': ["Report created"]
+        }
     
     def assist(self, task_description, X, y):
         """Run the ML assistant."""
