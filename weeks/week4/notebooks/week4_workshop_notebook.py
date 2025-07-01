@@ -412,8 +412,8 @@ if LANGGRAPH_AVAILABLE:
     try:
         from IPython.display import Image, display
         display(Image(app.get_graph().draw_png()))
-    except:
-        print("📊 Graph visualization not available")
+    except Exception as e:
+        print(f"📊 Graph visualization not available: {e}")
 else:
     print("📝 Example agent workflow:")
     print("""

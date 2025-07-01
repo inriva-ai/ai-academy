@@ -33,7 +33,7 @@ from sklearn.naive_bayes import GaussianNB
 # Check LangGraph availability
 try:
     from langgraph.graph import StateGraph, END
-    from langgraph.prebuilt import ToolExecutor
+    # from langgraph.prebuilt import ToolExecutor
     LANGGRAPH_AVAILABLE = True
 except ImportError:
     print("⚠️ LangGraph not installed. Install with: pip install langgraph")
@@ -132,16 +132,14 @@ class DataAnalystAgent:
             recommendations.append("feature_selection")
             
         recommendations.extend(["scaling", "cross_validation"])
-        
-        # Update state
-        state['data_report'] = analysis
-        state['preprocessing_recommendations'] = recommendations
-        state['messages'].append({
-            'agent': self.name,
-            'message': f"Analysis complete. Found {len(recommendations)} preprocessing recommendations."
-        })
-        
-        return state
+        return {
+            'data_report': analysis,
+            'preprocessing_recommendations': recommendations,
+            'messages': [{
+                'agent': self.name,
+                'message': f"Analysis complete. Found {len(recommendations)} preprocessing recommendations."
+            }]
+        }
     
     def _calculate_imbalance_ratio(self, y):
         """Calculate class imbalance ratio."""
@@ -197,21 +195,18 @@ class TreeBasedSpecialist:
                 'reasoning': "Gradient Boosting: High accuracy potential, good for competitions"
             }
             recommendations.append(gb_config)
-        
-        # Update state
-        state['tree_models_report'] = {
-            'specialist': self.name,
-            'recommendations': recommendations,
-            'confidence': 0.85 if len(recommendations) > 1 else 0.7
+        return {
+            'tree_models_report': {
+                'specialist': self.name,
+                'recommendations': recommendations,
+                'confidence': 0.85 if len(recommendations) > 1 else 0.7
+            },
+            'messages': [{
+                'agent': self.name,
+                'message': f"Recommended {len(recommendations)} tree-based models."
+            }]
         }
-        
-        state['messages'].append({
-            'agent': self.name,
-            'message': f"Recommended {len(recommendations)} tree-based models."
-        })
-        
-        return state
-
+    
 
 class LinearModelsSpecialist:
     """
@@ -258,21 +253,18 @@ class LinearModelsSpecialist:
                 'reasoning': "SVM: Good for non-linear boundaries, robust to outliers"
             }
             recommendations.append(svm_config)
-        
-        # Update state
-        state['linear_models_report'] = {
-            'specialist': self.name,
-            'recommendations': recommendations,
-            'confidence': 0.8
+        return {
+            'linear_models_report': {
+                'specialist': self.name,
+                'recommendations': recommendations,
+                'confidence': 0.8
+            },
+            'messages': [{
+                'agent': self.name,
+                'message': f"Recommended {len(recommendations)} linear/kernel models."
+            }]
         }
-        
-        state['messages'].append({
-            'agent': self.name,
-            'message': f"Recommended {len(recommendations)} linear/kernel models."
-        })
-        
-        return state
-
+    
 
 class TrainerAgent:
     """
@@ -336,18 +328,15 @@ class TrainerAgent:
             }
             
             print(f"   ✓ {model_type}: Test Acc = {test_score:.3f}")
-        
-        # Update state
-        state['trained_models'] = trained_models
-        state['model_scores'] = model_scores
-        
-        state['messages'].append({
-            'agent': self.name,
-            'message': f"Trained {len(trained_models)} models successfully."
-        })
-        
-        return state
-
+        return {
+            'trained_models': trained_models,
+            'model_scores': model_scores,
+            'messages': [{
+                'agent': self.name,
+                'message': f"Trained {len(trained_models)} models successfully."
+            }]
+        }
+    
 
 class EnsembleArchitect:
     """
@@ -442,26 +431,23 @@ class EnsembleArchitect:
         # Evaluate ensemble
         ensemble_train_score = ensemble.score(state['X_train'], state['y_train'])
         ensemble_test_score = ensemble.score(state['X_test'], state['y_test'])
-        
-        # Update state
-        state['ensemble_strategy'] = strategy
-        state['ensemble_config'] = config
-        state['ensemble_model'] = ensemble
-        state['ensemble_performance'] = {
-            'train_accuracy': ensemble_train_score,
-            'test_accuracy': ensemble_test_score,
-            'improvement': ensemble_test_score - max(
-                scores['test_accuracy'] 
-                for scores in model_scores.values()
-            )
+        return {
+            'ensemble_strategy': strategy,
+            'ensemble_config': config,
+            'ensemble_model': ensemble,
+            'ensemble_performance': {
+                'train_accuracy': ensemble_train_score,
+                'test_accuracy': ensemble_test_score,
+                'improvement': ensemble_test_score - max(
+                    scores['test_accuracy'] 
+                    for scores in model_scores.values()
+                )
+            },
+            'messages': [{
+                'agent': self.name,
+                'message': f"Created {strategy} ensemble with {ensemble_test_score:.3f} test accuracy."
+            }]
         }
-        
-        state['messages'].append({
-            'agent': self.name,
-            'message': f"Created {strategy} ensemble with {ensemble_test_score:.3f} test accuracy."
-        })
-        
-        return state
     
     def _calculate_diversity(self, model_scores):
         """Calculate diversity score based on performance variance."""
