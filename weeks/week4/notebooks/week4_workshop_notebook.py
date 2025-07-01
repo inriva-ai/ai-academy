@@ -297,8 +297,9 @@ try:
     import operator
     print("✅ LangGraph imported successfully!")
     LANGGRAPH_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     print("⚠️ LangGraph not installed. Install with: pip install langgraph")
+    print(f"Error: {e}")
     print("   We'll demonstrate the concepts with mock code.")
     LANGGRAPH_AVAILABLE = False
 
@@ -344,41 +345,40 @@ else:
 def data_loader_node(state):
     """Load and prepare dataset."""
     print(f"📊 Loading dataset: {state.get('dataset', 'wine')}")
-    state['messages'].append(f"Dataset loaded: {state.get('dataset', 'wine')}")
-    return state
+    return {
+        'messages': [f"Dataset loaded: {state.get('dataset', 'wine')}"]
+    }
 
 def model_trainer_node(state):
     """Train multiple models."""
     models = state.get('models_to_train', ['rf', 'gb'])
     print(f"🏋️ Training models: {models}")
-    
-    # Mock training results
-    state['trained_models'] = {model: f"trained_{model}" for model in models}
-    state['messages'].append(f"Trained {len(models)} models")
-    return state
+    return {
+        'trained_models': {model: f"trained_{model}" for model in models},
+        'messages': [f"Trained {len(models)} models"]
+    }
 
 def evaluator_node(state):
     """Evaluate trained models."""
     print("📈 Evaluating models...")
-    
-    # Mock evaluation results
-    state['evaluation_results'] = {
+    evaluation_results = {
         'rf': 0.95,
         'gb': 0.93,
         'svm': 0.91
     }
-    
-    # Find best model
-    best = max(state['evaluation_results'].items(), key=lambda x: x[1])
-    state['best_model'] = best[0]
-    state['messages'].append(f"Best model: {best[0]} with accuracy {best[1]}")
-    return state
+    best = max(evaluation_results.items(), key=lambda x: x[1])
+    return {
+        'evaluation_results': evaluation_results,
+        'best_model': best[0],
+        'messages': [f"Best model: {best[0]} with accuracy {best[1]}"]
+    }
 
 def report_generator_node(state):
     """Generate final report."""
     print("📝 Generating report...")
-    state['messages'].append("Final report generated")
-    return state
+    return {
+        'messages': ["Final report generated"]
+    }
 
 print("✅ Agent nodes defined")
 
