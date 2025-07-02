@@ -9,6 +9,7 @@ Run this pipeline:
 """
 
 from metaflow import FlowSpec, step, Parameter, current, card
+from metaflow.cards import Markdown
 import numpy as np
 import pandas as pd
 from sklearn.datasets import load_wine, make_classification
@@ -26,8 +27,9 @@ try:
     from typing import TypedDict, Annotated, Sequence, Dict, Any, List
     import operator
     LANGGRAPH_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     print("⚠️ LangGraph not installed. Some features will be limited.")
+    print(f"   Error: {e}")
     LANGGRAPH_AVAILABLE = False
 
 
@@ -169,6 +171,7 @@ class HybridMLPipeline(FlowSpec):
             
             self.selected_models = result['selected_models']
             self.model_configs = result['model_configs']
+            self.agent_messages += result['messages']
             
             print("\n🤖 Agent Selected Models:")
             for model_info in self.selected_models:
@@ -254,6 +257,7 @@ class HybridMLPipeline(FlowSpec):
             
             self.ensemble_strategy = result['ensemble_strategy']
             self.ensemble_rationale = result['rationale']
+            self.agent_messages += result['messages']
             
             print(f"\n🤖 Agent Ensemble Strategy: {self.ensemble_strategy}")
             print(f"   Rationale: {self.ensemble_rationale}")
@@ -291,30 +295,30 @@ class HybridMLPipeline(FlowSpec):
         print("\n📝 Report Generation Step")
         
         # Create report card
-        current.card.append("# Hybrid ML Pipeline Report")
-        current.card.append(f"**Date**: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-        current.card.append(f"**Dataset**: {self.dataset}")
+        current.card.append(Markdown("# Hybrid ML Pipeline Report"))
+        current.card.append(Markdown(f"**Date**: {datetime.now().strftime('%Y-%m-%d %H:%M')}"))
+        current.card.append(Markdown(f"**Dataset**: {self.dataset}"))
         
         # Data insights
-        current.card.append("\n## Data Analysis")
+        current.card.append(Markdown("\n## Data Analysis"))
         for key, value in self.data_insights.items():
-            current.card.append(f"- {key}: {value}")
+            current.card.append(Markdown(f"- {key}: {value}"))
         
         # Model performance
-        current.card.append("\n## Model Performance")
+        current.card.append(Markdown("\n## Model Performance"))
         results_df = pd.DataFrame(self.model_scores).T
-        current.card.append(results_df.to_html())
+        current.card.append(Markdown(results_df.to_html()))
         
         # Ensemble strategy
-        current.card.append("\n## Ensemble Strategy")
-        current.card.append(f"**Strategy**: {self.ensemble_strategy}")
-        current.card.append(f"**Rationale**: {self.ensemble_rationale}")
+        current.card.append(Markdown("\n## Ensemble Strategy"))
+        current.card.append(Markdown(f"**Strategy**: {self.ensemble_strategy}"))
+        current.card.append(Markdown(f"**Rationale**: {self.ensemble_rationale}"))
         
         # Agent messages
         if hasattr(self, 'agent_messages'):
-            current.card.append("\n## Agent Decision Log")
-            for msg in self.agent_messages[-10:]:  # Last 10 messages
-                current.card.append(f"- {msg}")
+            current.card.append(Markdown("\n## Agent Decision Log"))
+            for msg in self.agent_messages[-20:]:  # Last 20 messages
+                current.card.append(Markdown(f"- {msg}"))
         
         # Final recommendations
         self._generate_recommendations()
@@ -342,8 +346,8 @@ class HybridMLPipeline(FlowSpec):
             print("- Intelligent model selection based on data characteristics")
             print("- Ensemble strategy optimization")
         
-        print(f"\n📊 View detailed report with:")
-        print(f"   python hybrid_langgraph_metaflow.py card view {current.run_id}")
+        # print(f"\n📊 View detailed report with:")
+        # print(f"   python hybrid_langgraph_metaflow.py card view {current.run_id}")
     
     # ========================================================================
     # LangGraph Agent Definitions
@@ -373,10 +377,11 @@ class HybridMLPipeline(FlowSpec):
                 'feature_variance': np.var(X, axis=0).mean(),
                 'needs_scaling': np.std(X, axis=0).max() > 10
             }
-            
-            state['insights'] = insights
-            state['messages'].append("Data analysis complete")
-            return state
+            # Return only changes, assign messages
+            return {
+                'insights': insights,
+                'messages': ["Data analysis complete"]
+            }
         
         def plan_preprocessing_node(state):
             insights = state['insights']
@@ -391,10 +396,10 @@ class HybridMLPipeline(FlowSpec):
             class_counts = insights['class_balance']
             if max(class_counts) / min(class_counts) > 2:
                 plan.append('balance_classes')
-            
-            state['preprocessing_plan'] = plan
-            state['messages'].append(f"Preprocessing plan: {', '.join(plan)}")
-            return state
+            return {
+                'preprocessing_plan': plan,
+                'messages': [f"Preprocessing plan: {', '.join(plan)}"]
+            }
         
         # Build graph
         workflow = StateGraph(AnalysisState)
@@ -463,12 +468,11 @@ class HybridMLPipeline(FlowSpec):
                 'max_iter': 1000,
                 'random_state': 42
             }
-            
-            state['selected_models'] = selected
-            state['model_configs'] = configs
-            state['messages'].append(f"Selected {len(selected)} models based on data characteristics")
-            
-            return state
+            return {
+                'selected_models': selected,
+                'model_configs': configs,
+                'messages': [f"Selected {len(selected)} models based on data characteristics"]
+            }
         
         # Build graph
         workflow = StateGraph(SelectionState)
@@ -500,12 +504,11 @@ class HybridMLPipeline(FlowSpec):
             # Check if models are diverse enough
             has_ensemble = any(t == 'ensemble' for t in state['model_types'].values())
             has_linear = any(t == 'linear' for t in state['model_types'].values())
-            
-            state['diversity_score'] = performance_variance
-            state['has_diverse_types'] = has_ensemble and has_linear
-            state['messages'].append(f"Model diversity score: {performance_variance:.3f}")
-            
-            return state
+            return {
+                'diversity_score': performance_variance,
+                'has_diverse_types': has_ensemble and has_linear,
+                'messages': [f"Model diversity score: {performance_variance:.3f}"]
+            }
         
         def select_strategy_node(state):
             diversity = state.get('diversity_score', 0)
@@ -521,12 +524,11 @@ class HybridMLPipeline(FlowSpec):
             else:
                 strategy = 'single_best'
                 rationale = "Models too similar or too few - using best single model"
-            
-            state['ensemble_strategy'] = strategy
-            state['rationale'] = rationale
-            state['messages'].append(f"Selected strategy: {strategy}")
-            
-            return state
+            return {
+                'ensemble_strategy': strategy,
+                'rationale': rationale,
+                'messages': [f"Selected strategy: {strategy}"]
+            }
         
         # Build graph
         workflow = StateGraph(EnsembleState)
@@ -560,9 +562,9 @@ class HybridMLPipeline(FlowSpec):
             recommendations.append("Try more diverse model types for ensemble benefits")
         
         if recommendations:
-            current.card.append("\n## Recommendations")
+            current.card.append(Markdown("\n## Recommendations"))
             for rec in recommendations:
-                current.card.append(f"- {rec}")
+                current.card.append(Markdown(f"- {rec}"))
 
 
 if __name__ == '__main__':
