@@ -11,7 +11,10 @@ With parameters:
     python ensemble_pipeline.py run --n_estimators 200 --test_size 0.3
 """
 
-from metaflow import FlowSpec, step, Parameter, current, card, foreach
+
+from metaflow import FlowSpec, Parameter, step, current, card
+from metaflow.cards import Image, Markdown
+
 import numpy as np
 import pandas as pd
 from sklearn.datasets import load_wine, load_breast_cancer
@@ -36,6 +39,9 @@ import seaborn as sns
 import pickle
 import json
 from datetime import datetime
+import warnings
+warnings.filterwarnings('ignore')
+
 
 
 class EnsemblePipeline(FlowSpec):
@@ -182,7 +188,7 @@ class EnsemblePipeline(FlowSpec):
                 
                 rf = RandomForestClassifier(random_state=42)
                 grid_search = GridSearchCV(
-                    rf, param_grid, cv=5, n_jobs=-1, 
+                    rf, param_grid, cv=5, 
                     scoring='accuracy', verbose=0
                 )
                 grid_search.fit(self.X_train_scaled, self.y_train)
@@ -221,7 +227,7 @@ class EnsemblePipeline(FlowSpec):
             
         elif self.ensemble_name == 'bagging':
             self.model = BaggingClassifier(
-                base_estimator=DecisionTreeClassifier(),
+                estimator=DecisionTreeClassifier(),
                 n_estimators=self.n_estimators,
                 random_state=42
             )
@@ -303,6 +309,7 @@ class EnsemblePipeline(FlowSpec):
         
         self.next(self.evaluate_ensembles)
     
+    @card
     @step
     def evaluate_ensembles(self):
         """
@@ -332,10 +339,10 @@ class EnsemblePipeline(FlowSpec):
         print(self.comparison_df.to_string(index=False))
         
         # Generate visualizations
-        self._create_performance_plot()
-        self._create_feature_importance_plot()
-        self._create_confusion_matrix()
-        
+        current.card.append(Image.from_matplotlib(self._create_performance_plot(), label='Ensemble Performance'))
+        current.card.append(Image.from_matplotlib(self._create_feature_importance_plot(), label=f'Feature Importance - {name}'))
+        current.card.append(Image.from_matplotlib(self._create_confusion_matrix(), label=f'Confusion Matrix - {self.best_ensemble_name}'))
+
         self.next(self.create_meta_ensemble)
     
     @step
@@ -356,7 +363,7 @@ class EnsemblePipeline(FlowSpec):
         
         self.meta_ensemble = VotingClassifier(
             estimators=meta_estimators,
-            voting='soft'
+            voting='hard'
         )
         
         # Train meta-ensemble
@@ -384,34 +391,35 @@ class EnsemblePipeline(FlowSpec):
         print("📝 Generating final report...")
         
         # Create report card
-        current.card.append(f"# Ensemble Learning Pipeline Report")
-        current.card.append(f"**Date**: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-        current.card.append(f"**Dataset**: {self.dataset_info['name']}")
+        current.card.append(Markdown(f"# Ensemble Learning Pipeline Report"))
+        current.card.append(Markdown(f"**Date**: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+        )
+        current.card.append(Markdown(f"**Dataset**: {self.dataset_info['name']}"))
         
         # Dataset summary
-        current.card.append("## Dataset Summary")
-        current.card.append(f"- Samples: {self.dataset_info['n_samples']}")
-        current.card.append(f"- Features: {self.dataset_info['n_features']}")
-        current.card.append(f"- Classes: {self.dataset_info['n_classes']}")
+        current.card.append(Markdown("## Dataset Summary"))
+        current.card.append(Markdown(f"- Samples: {self.dataset_info['n_samples']}"))
+        current.card.append(Markdown(f"- Features: {self.dataset_info['n_features']}"))
+        current.card.append(Markdown(f"- Classes: {self.dataset_info['n_classes']}"))
         
         # Model comparison
-        current.card.append("## Ensemble Comparison")
-        current.card.append(self.comparison_df.to_html(index=False))
+        current.card.append(Markdown("## Ensemble Comparison"))
+        current.card.append(Markdown(self.comparison_df.to_html(index=False)))
         
         # Best model details
-        current.card.append(f"## Best Ensemble: {self.best_ensemble_name}")
-        current.card.append(f"- Test Accuracy: {self.best_ensemble_metrics['test_accuracy']:.3f}")
-        current.card.append(f"- CV Score: {self.best_ensemble_metrics['cv_mean']:.3f} ± {self.best_ensemble_metrics['cv_std']:.3f}")
+        current.card.append(Markdown(f"## Best Ensemble: {self.best_ensemble_name}"))
+        current.card.append(Markdown(f"- Test Accuracy: {self.best_ensemble_metrics['test_accuracy']:.3f}"))
+        current.card.append(Markdown(f"- CV Score: {self.best_ensemble_metrics['cv_mean']:.3f} ± {self.best_ensemble_metrics['cv_std']:.3f}"))
         
         if self.best_ensemble_metrics['best_params']:
-            current.card.append("### Optimized Hyperparameters")
+            current.card.append(Markdown("### Optimized Hyperparameters"))
             for param, value in self.best_ensemble_metrics['best_params'].items():
-                current.card.append(f"- {param}: {value}")
+                current.card.append(Markdown(f"- {param}: {value}"))
         
         # Meta-ensemble results
-        current.card.append("## Meta-Ensemble Results")
-        current.card.append(f"- Accuracy: {self.meta_accuracy:.3f}")
-        current.card.append(f"- Improvement: {self.meta_accuracy - self.best_ensemble_metrics['test_accuracy']:+.3f}")
+        current.card.append(Markdown("## Meta-Ensemble Results"))
+        current.card.append(Markdown(f"- Accuracy: {self.meta_accuracy:.3f}"))
+        current.card.append(Markdown(f"- Improvement: {self.meta_accuracy - self.best_ensemble_metrics['test_accuracy']:+.3f}"))
         
         # Save models
         self.saved_models = {
@@ -436,12 +444,12 @@ class EnsemblePipeline(FlowSpec):
         print(f"Best Single Model: {self.best_ensemble_name}")
         print(f"Best Accuracy: {self.best_ensemble_metrics['test_accuracy']:.3f}")
         print(f"Meta-Ensemble Accuracy: {self.meta_accuracy:.3f}")
-        print("\n📊 View detailed report with:")
-        print(f"   python ensemble_pipeline.py card view {current.run_id}")
+        # print("\n📊 View detailed report with:")
+        # print(f"   python ensemble_pipeline.py card view {current.run_id}")
     
     def _create_performance_plot(self):
         """Helper to create performance comparison plot."""
-        plt.figure(figsize=(12, 6))
+        fig = plt.figure(figsize=(12, 6))
         
         # Prepare data
         ensemble_names = list(self.ensemble_results.keys())
@@ -463,9 +471,7 @@ class EnsemblePipeline(FlowSpec):
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
         
-        # Save plot
-        plt.savefig('ensemble_performance.png', dpi=300, bbox_inches='tight')
-        plt.close()
+        return fig
     
     def _create_feature_importance_plot(self):
         """Helper to create feature importance plot."""
@@ -486,7 +492,7 @@ class EnsemblePipeline(FlowSpec):
             importances = best_with_importance[1]['feature_importances']
             
             # Create plot
-            plt.figure(figsize=(10, 8))
+            fig = plt.figure(figsize=(10, 8))
             
             # Sort features by importance
             indices = np.argsort(importances)[::-1][:15]  # Top 15 features
@@ -498,16 +504,15 @@ class EnsemblePipeline(FlowSpec):
             plt.title(f'Feature Importance - {name}')
             plt.tight_layout()
             
-            plt.savefig('feature_importance.png', dpi=300, bbox_inches='tight')
-            plt.close()
-    
+            return fig
+
     def _create_confusion_matrix(self):
         """Helper to create confusion matrix for best model."""
         y_pred = self.ensemble_results[self.best_ensemble_name]['y_pred_test']
         
         cm = confusion_matrix(self.y_test, y_pred)
         
-        plt.figure(figsize=(8, 6))
+        fig = plt.figure(figsize=(8, 6))
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
                     xticklabels=self.target_names,
                     yticklabels=self.target_names)
@@ -516,8 +521,7 @@ class EnsemblePipeline(FlowSpec):
         plt.ylabel('Actual')
         plt.tight_layout()
         
-        plt.savefig('confusion_matrix.png', dpi=300, bbox_inches='tight')
-        plt.close()
+        return fig
 
 
 if __name__ == '__main__':
