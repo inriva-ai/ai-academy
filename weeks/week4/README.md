@@ -327,16 +327,16 @@ from metaflow import FlowSpec, step, Parameter, current, card
 ### Ensemble Methods
 - [Scikit-learn Ensemble Guide](https://scikit-learn.org/stable/modules/ensemble.html)
 - [XGBoost Documentation](https://xgboost.readthedocs.io/)
-- [Ensemble Learning Paper Collection](https://github.com/yzhao062/ensemble-learning)
+- [Ensemble Learning Paper Collection](https://github.com/yzhao062/awesome-ensemble-learning)
 
 ### LangGraph
 - [LangGraph Documentation](https://langchain-ai.github.io/langgraph/)
-- [LangGraph Tutorials](https://langchain-ai.github.io/langgraph/tutorials/)
+- [LangGraph Tutorials](https://langchain-ai.github.io/langgraph/tutorials/overview/)
 - [Agent Architectures](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/)
 
 ### Integration Examples
-- [LangChain + Scikit-learn](https://python.langchain.com/docs/integrations/toolkits/sklearn)
-- [Multi-Agent Systems](https://langchain-ai.github.io/langgraph/tutorials/multi_agent/)
+- [LangChain + Scikit-learn](https://python.langchain.com/docs/integrations/providers/sklearn/)
+- [Multi-Agent Systems](https://langchain-ai.github.io/langgraph/tutorials/multi_agent/multi-agent-collaboration/)
 
 ## 🔧 Troubleshooting
 
